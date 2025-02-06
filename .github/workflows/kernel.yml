@@ -306,7 +306,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  Build-Sid:
+  Build-Testing:
     needs: [Create-tag]
     runs-on: ubuntu-latest
     steps:
@@ -330,7 +330,7 @@ jobs:
           echo Building $VERSION-$REL
           echo "tag=${VERSION}-${REL}" >> $GITHUB_OUTPUT
 
-          DOCKER_IMAGE=debian:sid
+          DOCKER_IMAGE=debian:testing
           docker pull ${DOCKER_IMAGE}
           docker run \
           -t \
@@ -353,7 +353,7 @@ jobs:
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-T2-${{ steps.build.outputs.tag }}-sid
+          name: linux-T2-${{ steps.build.outputs.tag }}-testing
           path: /tmp/artifacts/*
 
       - name: Release
@@ -371,7 +371,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
   Publish:
-    needs: [Build-Jammy, Build-Noble, Build-Oracular, Build-Bookworm, Build-Sid]
+    needs: [Build-Jammy, Build-Noble, Build-Oracular, Build-Bookworm, Build-Testing]
     runs-on: ubuntu-latest
     steps:
 
