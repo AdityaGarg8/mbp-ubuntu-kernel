@@ -9,7 +9,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y lsb-release
 
-KERNEL_VERSION=6.13.1
+KERNEL_VERSION=6.13.2
 PKGREL=xanmod1
 CODENAME=$(lsb_release -c | cut -d ":" -f 2 | xargs)
 
