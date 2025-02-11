@@ -1,0 +1,94 @@
+diff --git a/drivers/firmware/efi/libstub/x86-stub.c b/drivers/firmware/efi/libstub/x86-stub.c
+index 863910e9eefc..3092a6e5166f 100644
+--- a/drivers/firmware/efi/libstub/x86-stub.c
++++ b/drivers/firmware/efi/libstub/x86-stub.c
+@@ -27,6 +27,7 @@ const efi_system_table_t *efi_system_table;
+ const efi_dxe_services_table_t *efi_dxe_table;
+ static efi_loaded_image_t *image = NULL;
+ static efi_memory_attribute_protocol_t *memattr;
++static unsigned int nr_gpus;
+ 
+ typedef union sev_memory_acceptance_protocol sev_memory_acceptance_protocol_t;
+ union sev_memory_acceptance_protocol {
+@@ -39,6 +40,23 @@ union sev_memory_acceptance_protocol {
+ 	} mixed_mode;
+ };
+ 
++static void update_nr_gpus(efi_pci_io_protocol_t *pci)
++{
++	efi_status_t status;
++	u16 class;
++
++	status = efi_call_proto(pci, pci.read, EfiPciIoWidthUint16,
++				PCI_CLASS_DEVICE, 1, &class);
++
++	if (status != EFI_SUCCESS) {
++		efi_err("Failed to read device class\n");
++		return;
++	}
++
++	if (class >> 8 == PCI_BASE_CLASS_DISPLAY)
++		nr_gpus++;
++}
++
+ static efi_status_t
+ preserve_pci_rom_image(efi_pci_io_protocol_t *pci, struct pci_setup_rom **__rom)
+ {
+@@ -150,6 +168,8 @@ static void setup_efi_pci(struct boot_params *params)
+ 			params->hdr.setup_data = (unsigned long)rom;
+ 
+ 		data = (struct setup_data *)rom;
++
++		update_nr_gpus(pci);
+ 	}
+ }
+ 
+@@ -203,37 +223,6 @@ static void retrieve_apple_device_properties(struct boot_params *boot_params)
+ 	}
+ }
+ 
+-static bool apple_match_product_name(void)
+-{
+-	static const char type1_product_matches[][15] = {
+-		"MacBookPro11,3",
+-		"MacBookPro11,5",
+-		"MacBookPro13,3",
+-		"MacBookPro14,3",
+-		"MacBookPro15,1",
+-		"MacBookPro15,3",
+-		"MacBookPro16,1",
+-		"MacBookPro16,4",
+-	};
+-	const struct efi_smbios_type1_record *record;
+-	const u8 *product;
+-
+-	record = (struct efi_smbios_type1_record *)efi_get_smbios_record(1);
+-	if (!record)
+-		return false;
+-
+-	product = efi_get_smbios_string(record, product_name);
+-	if (!product)
+-		return false;
+-
+-	for (int i = 0; i < ARRAY_SIZE(type1_product_matches); i++) {
+-		if (!strcmp(product, type1_product_matches[i]))
+-			return true;
+-	}
+-
+-	return false;
+-}
+-
+ static void apple_set_os(void)
+ {
+ 	struct {
+@@ -243,7 +232,7 @@ static void apple_set_os(void)
+ 	} *set_os;
+ 	efi_status_t status;
+ 
+-	if (!efi_is_64bit() || !apple_match_product_name())
++	if (!efi_is_64bit() || nr_gpus < 2)
+ 		return;
+ 
+ 	status = efi_bs_call(locate_protocol, &APPLE_SET_OS_PROTOCOL_GUID, NULL,
+
+  
