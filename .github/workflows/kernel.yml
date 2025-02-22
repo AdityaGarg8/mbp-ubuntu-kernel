@@ -153,7 +153,8 @@ jobs:
           cp -r "$(pwd)"/debs/* /tmp/artifacts
 
           cd /tmp/artifacts
-          #rm /tmp/artifacts/*dbg*
+          mkdir -p ${{ github.workspace }}/dbg
+          mv -v /tmp/artifacts/*dbg* ${{ github.workspace }}/dbg
           ls -l
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
           ls -l
@@ -163,6 +164,12 @@ jobs:
         with:
           name: linux-T2-${{ steps.build.outputs.tag }}-noble
           path: /tmp/artifacts/*
+
+      - name: Upload package artifact dbg
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-T2-${{ steps.build.outputs.tag }}-noble-dbg
+          path: ${{ github.workspace }}/dbg/*
 
       - name: Release
         if: github.ref == 'refs/heads/Mainline'
