@@ -22,4 +22,4 @@ git checkout ${T2_PATCHES_COMMIT_HASH}
 while IFS= read -r file; do
   echo "==> Adding ${file}"
   cp -rfv "${file}" "${WORKING_PATH}"/patches/"${file##*/}"
-done < <(find "${BUILD_PATH}/linux-mbp-arch" -type f -name "*.patch" | grep -vE '000[0-9]')
+done < <(find "${BUILD_PATH}/linux-mbp-arch" -type f -name "*.patch")
